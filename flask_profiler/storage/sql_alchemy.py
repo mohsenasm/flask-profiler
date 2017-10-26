@@ -204,3 +204,57 @@ class Sqlachemy(BaseStorage):
 
     def __exit__(self, exc_type, exc_value, traceback):
         return self.db
+
+    def getTimeseries(self, kwds={}):
+        filters = Sqlachemy.getFilters(kwds)
+        session = sessionmaker(self.db)()
+        query = session.query(
+                    Measurements.startedAt,
+                    func.count(Measurements.id),
+                )
+
+        if kwds.get('interval', None) == "daily":
+            interval = 3600 * 24  # daily
+            dateFormat = '%Y-%m-%d'
+        else:
+            interval = 3600  # hourly
+            dateFormat = '%Y-%m-%d %H'
+
+        endedAt, startedAt = filters["endedAt"], filters["startedAt"]
+        query = query.filter(Measurements.endedAt <= endedAt)
+        query = query.filter(Measurements.startedAt >= startedAt)
+
+        query = query.group_by(func.strftime(dateFormat, func.datetime(Measurements.startedAt, 'unixepoch')))
+        query = query.order_by(getattr(getattr(Measurements, "startedAt"), "asc")())
+
+        rows = query.all()
+
+        series = {}
+        for i in range(int(startedAt), int(endedAt) + 1, interval):
+            series[formatDate(i, dateFormat)] = 0
+
+        for row in rows:
+            series[formatDate(row[0], dateFormat)] = row[1]
+        return series
+
+    def getMethodDistribution(self, kwds):
+        if not kwds:
+            kwds = {}
+        f = Sqlachemy.getFilters(kwds)
+        session = sessionmaker(self.db)()
+        query = session.query(
+                    Measurements.method,
+                    func.count(Measurements.id),
+                )
+
+        endedAt, startedAt = f["endedAt"], f["startedAt"]
+        query = query.filter(Measurements.endedAt <= endedAt)
+        query = query.filter(Measurements.startedAt >= startedAt)
+
+        query = query.group_by(Measurements.method)
+        rows = query.all()
+
+        results = {}
+        for row in rows:
+            results[row[0]] = row[1]
+        return results

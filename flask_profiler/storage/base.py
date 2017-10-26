@@ -19,3 +19,9 @@ class BaseStorage(object):
 
     def truncate(self):
         raise Exception("Not implemented Error")
+
+    def getTimeseries(self, kwds):
+        raise Exception("Not implemented Error")
+
+    def getMethodDistribution(self, kwds):
+        raise Exception("Not implemented Error")
