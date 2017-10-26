@@ -64,6 +64,24 @@ class EndpointMeasurementTest2(BaseTest2, FlaskTestCase):
         self.assertEqual(m["kwargs"], {"message": "hello"})
         self.assertEqual(m["context"]["args"], {"q": "2"})
 
+class EndpointMeasurementTest3(BaseTest2, FlaskTestCase):
+
+    def test_01_methods(self):
+        self.client.get("/api/people/foo")
+        self.client.get("/api/people/foo")
+        self.client.post("/api/update")
+        method_distribution = flask_profiler.collection.getMethodDistribution(None)
+        self.assertEqual(method_distribution['POST'], 1)
+        self.assertEqual(method_distribution['GET'], 2)
+
+    def test_02_timeseries(self):
+        self.client.get("/api/people/foo")
+        self.client.get("/api/people/foo")
+        self.client.post("/api/update")
+        timeseries = flask_profiler.collection.getTimeseries()
+        self.assertEqual(len(timeseries.keys()), 24*7 + 1)
+        self.assertEqual(sum([timeseries[t] for t in timeseries.keys()]), 3)
+        
 
 if __name__ == '__main__':
     unittest.main()

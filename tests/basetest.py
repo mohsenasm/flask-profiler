@@ -128,4 +128,8 @@ class BaseTest2(unittest.TestCase):
         def customProfilerEP(message):
             return "with profiler"
 
+        @app.route("/api/update", methods=['POST'])
+        def customUpdateProfilerEP():
+            return "somthing updated"
+
         return app
